@@ -196,3 +196,7 @@ def main():
   loss_fn = nn.CrossEntropyLoss()
 
 
+if __name__ == '__main__':
+  train(200)
+
+
