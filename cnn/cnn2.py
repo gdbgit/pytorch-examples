@@ -165,7 +165,7 @@ train_transformations = transforms.Compose([
 ])
 
 # define train set and train data loader
-train_set = CIFAR10('/datadrive/mic/pytorch-examples', train=True, transforms=train_transformations, download=True)
+train_set = CIFAR10('/datadrive/mic/pytorch-examples', train=True, transform=train_transformations, download=True)
 train_loader = DataLoader(train_set, batch_size=32, shuffle=True, num_workers=4)
 
 # define test transformation
@@ -174,7 +174,7 @@ test_transformations = transforms.Compose([
   transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
 ])
 # define test set and test data loader
-test_set = CIFAR10('/datadrive/mic/pytorch-examples', train=False, transforms=test_transformations, download=True)
+test_set = CIFAR10('/datadrive/mic/pytorch-examples', train=False, transform=test_transformations, download=True)
 test_loader = DataLoader(test_set, batch_size=32, shuffle=False, num_workers=4)
 
 
