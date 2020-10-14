@@ -17,6 +17,9 @@ from torchvision.datasets import CIFAR10
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
 from torch.optim import Adam
+import requests
+import json
+import os
 
 
 
@@ -164,6 +167,25 @@ train_transformations = transforms.Compose([
   transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
 ])
 
+
+def predict_image(image_path):
+  print('Predict image in progress')
+  image = Image.open(image_path)
+  transformation = transforms.Compose([
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
+  ])
+  image_tensor = transformation(image).float()
+  image_tensor = image_tensor.unsqueeze_(0)
+  if cuda_avail:
+    image_tensor.cuda()
+  input = Variable(image_tensor)
+  output = model(input)
+  index = output.data.numpy().argmax()
+
+  return index
+
 # define train set and train data loader
 train_set = CIFAR10('/datadrive/mic/pytorch-examples', train=True, transform=train_transformations, download=True)
 train_loader = DataLoader(train_set, batch_size=32, shuffle=True, num_workers=4)
@@ -192,6 +214,26 @@ loss_fn = nn.CrossEntropyLoss()
 
 
 if __name__ == '__main__':
-  train(200)
+  # train(200)
 
+  image_file = 'image.png'
+  image_path = os.path.join(os.getcwd(), image_file)
+  if not os.path.exists(image_path):
+    data = requests.get('https://github.com/OlafenwaMoses/ImageAI/raw/master/images/3.jpg', stream=True)
+    with open(image_path, 'wb') as file:
+      shutil.copyfileobj(data.raw, file)
+    del data
+
+  index_file = 'class_index_map.json'
+  index_path = os.path.join(os.getcwd(), index_file)
+  if not os.path.exists(index_path):
+    data = requests.get('https://github.com/OlafenwaMoses/ImageAI/raw/master/imagenet_class_index.json')
+    with open(index_path, 'w', encoding='utf-8') as file:
+      file.write(data.text)
+  class_map = json.load(open(index_path))
+
+  index = predict_image(image_path)
+  prediction = class_map[str(index)][1]
+
+  print('Predicted Class: ', prediction)
 
