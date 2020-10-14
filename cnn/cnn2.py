@@ -103,7 +103,6 @@ def adjust_learning_rate(epoch):
 
 def train(num_epochs):
   best_acc = 0.0
-  global cuda_avail, train_loader, train_transformations, optimizer
   for epoch in range(num_epochs):
     model.train()
     train_acc = 0.0
@@ -144,7 +143,6 @@ def save_models(epoch):
 def test():
   model.eval()
   test_acc = 0.0
-  global test_loader, cuda_avail
   for i, (images, labels) in enumerate(test_loader):
     if cuda_avail:
       images = Variable(images.cuda())
@@ -158,42 +156,39 @@ def test():
   return test_acc
 
 
+# define train transformation
+train_transformations = transforms.Compose([
+  transforms.RandomHorizontalFlip(),
+  transforms.RandomCrop(32,padding=4),
+  transforms.ToTensor(),
+  transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
+])
+
+# define train set and train data loader
+train_set = CIFAR10('/datadrive/mic/pytorch-examples', train=True, transforms=train_transformations, download=True)
+train_loader = DataLoader(train_set, batch_size=32, shuffle=True, num_workers=4)
+
+# define test transformation
+test_transformations = transforms.Compose([
+  transforms.ToTensor(),
+  transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
+])
+# define test set and test data loader
+test_set = CIFAR10('/datadrive/mic/pytorch-examples', train=False, transforms=test_transformations, download=True)
+test_loader = DataLoader(test_set, batch_size=32, shuffle=False, num_workers=4)
 
 
-def main():
-  # define train transformation
-  train_transformations = transforms.Compose([
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomCrop(32,padding=4),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
-  ])
+#defin model
+model = SimpleNet(num_classes=10)
 
-  # define train set and train data loader
-  train_set = CIFAR10('/datadrive/mic/pytorch-examples', train=True, transforms=train_transformations, download=True)
-  train_loader = DataLoader(train_set, batch_size=32, shuffle=True, num_workers=4)
+# if GPU available, move model to GPU
+cuda_avail = torch.cuda.is_available()
+if cuda_avail:
+  model.cuda()
 
-  # define test transformation
-  test_transformations = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))
-  ])
-  # define test set and test data loader
-  test_set = CIFAR10('/datadrive/mic/pytorch-examples', train=False, transforms=test_transformations, download=True)
-  test_loader = DataLoader(test_set, batch_size=32, shuffle=False, num_workers=4)
-
-
-  #defin model
-  model = SimpleNet(num_classes=10)
-
-  # if GPU available, move model to GPU
-  cuda_avail = torch.cuda.is_available()
-  if cuda_avail:
-    model.cuda()
-
-  # define optimizer and loss functino
-  optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
-  loss_fn = nn.CrossEntropyLoss()
+# define optimizer and loss functino
+optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
+loss_fn = nn.CrossEntropyLoss()
 
 
 if __name__ == '__main__':
